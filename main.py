@@ -54,12 +54,21 @@ class Tokenizer:
     def is_letter(self, ch: str) -> boolean:
         return ch in "abcdefghijklmnopqrstuvwxyz-"
 
+    def is_keyword(self, word: str) -> boolean:
+        return ch in ("lambda", "if", "then", "else")
+
+    def is_punc(self, ch: str) -> boolean:
+        return ch in "(),;,"
+
+    def is_operator(self, ch: str) -> boolean:
+        return ch in ("+", "-", "/", "*", "==", "!=", "!")
+
     def consume_line(self):
         start = self.stream.line
         while self.stream.line == start:
             self.stream.next()
 
-    def consume_string(self):
+    def consume_string(self) -> str:
         string = ""
         while not is_quote(self.stream.peek()):
             string += self.stream.next()
@@ -67,14 +76,25 @@ class Tokenizer:
                 self.stream.throw("string is not closed")
         return string
 
-    def consume_digit(self):
-        digit = 0
+    def consume_number(self) -> int:
+        number = 0
         while not self.steam.eof() and is_digit(self.stream.peek()):
             ch = self.stream.next()
-            digit = digit * 10 + int(ch)
-        return digit
+            number = number * 10 + int(ch)
+        return number 
 
-    def consume_
+    # keyword or identifier
+    def consume_word(self) -> str:
+        word = ""
+        while not self.stream.eof() and is_letter(self.stream.peek()):
+            word += self.stream.next()
+        return word 
+
+    def consume_punc(self) -> str:
+        return self.stream.next()
+
+    def consume_operator(self) -> str:
+        ...
 
     def next_token(self):
         ch = self.stream.peek()
@@ -84,9 +104,15 @@ class Tokenizer:
         elif is_quote(ch):
             return Token(type="str", value=self.consume_string())
         elif is_digit(ch):
-            return Token(type="num", value=self.consume_digit())
+            return Token(type="num", value=self.consume_number())
         elif is_letter(ch):
-
+            word = self.consume_word()
+            token_type = "kw" if self.is_keyword(word) else "var"
+            return Token(type=token_type, value=word)
+        elif is_punc(ch):
+            return Token(type="punc", value=self.consume_punc()) 
+        elif is_operator(ch):
+            return 
 
     def tokenize(self):
         while not self.stream.eof():
