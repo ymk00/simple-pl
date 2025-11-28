@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any
+import sys
 
 class InputStream:
     def __init__(self, input: str):
@@ -37,31 +38,31 @@ class Tokenizer:
     def __init__(self, stream: InputStream):
         self.stream = stream
 
-    def is_whitespace(self, ch: str) -> boolean:
-        return ch == "\n" || ch == "\t" || ch == " "
+    def is_whitespace(self, ch: str) -> bool:
+        return ch == "\n" or ch == "\t" or ch == " "
 
     # just to stay consistent
-    def is_quote(self, ch: str) -> boolean:
+    def is_quote(self, ch: str) -> bool:
         return ch == '"'
 
-    def is_comment(self, ch: str) -> boolean:
+    def is_comment(self, ch: str) -> bool:
         return ch == "#"
 
-    def is_digit(self, ch: str) -> boolean:
+    def is_digit(self, ch: str) -> bool:
         return ch in "0123456789"
 
-    # well, not really... (due to -)
-    def is_letter(self, ch: str) -> boolean:
-        return ch in "abcdefghijklmnopqrstuvwxyz-"
+    def is_letter(self, ch: str) -> bool:
+        return ch in "abcdefghijklmnopqrstuvwxyz"
 
-    def is_keyword(self, word: str) -> boolean:
-        return ch in ("lambda", "if", "then", "else")
+    def is_keyword(self, word: str) -> bool:
+        return word in ("lambda", "if", "then", "else", "true", "false")
 
-    def is_punc(self, ch: str) -> boolean:
-        return ch in "(),;,"
+    def is_punc(self, ch: str) -> bool:
+        return ch in "(),;.[]{}"
 
-    def is_operator(self, ch: str) -> boolean:
-        return ch in ("+", "-", "/", "*", "==", "!=", "!")
+    # this is ok, since our compound operators aren't special
+    def is_operator(self, ch: str) -> bool:
+        return ch in ("+", "-", "/", "*", "=", "!", "==", "!=")
 
     def consume_line(self):
         start = self.stream.line
@@ -70,7 +71,7 @@ class Tokenizer:
 
     def consume_string(self) -> str:
         string = ""
-        while not is_quote(self.stream.peek()):
+        while not self.is_quote(self.stream.peek()):
             string += self.stream.next()
             if self.stream.eof():
                 self.stream.throw("string is not closed")
@@ -78,48 +79,61 @@ class Tokenizer:
 
     def consume_number(self) -> int:
         number = 0
-        while not self.steam.eof() and is_digit(self.stream.peek()):
+        while not self.stream.eof() and self.is_digit(self.stream.peek()):
             ch = self.stream.next()
             number = number * 10 + int(ch)
         return number 
 
     # keyword or identifier
     def consume_word(self) -> str:
+        valid_ch = lambda ch: ch == "-" or self.is_letter(ch) or self.is_digit(ch)
+
         word = ""
-        while not self.stream.eof() and is_letter(self.stream.peek()):
+        while not self.stream.eof() and valid_ch(self.stream.peek()): 
             word += self.stream.next()
         return word 
 
     def consume_punc(self) -> str:
         return self.stream.next()
 
+    # fine since compound operators can only be made up of operators
     def consume_operator(self) -> str:
-        ...
+        operator = ""
+        while not self.stream.eof() and self.is_operator(operator + self.stream.peek()): 
+            operator += self.stream.next()
+        return operator
 
     def next_token(self):
         ch = self.stream.peek()
-        if is_comment(ch):
+        if self.is_comment(ch):
             self.consume_line()
             return None
-        elif is_quote(ch):
+        elif self.is_quote(ch):
             return Token(type="str", value=self.consume_string())
-        elif is_digit(ch):
+        elif self.is_digit(ch):
             return Token(type="num", value=self.consume_number())
-        elif is_letter(ch):
+        elif self.is_letter(ch):
             word = self.consume_word()
             token_type = "kw" if self.is_keyword(word) else "var"
             return Token(type=token_type, value=word)
-        elif is_punc(ch):
+        elif self.is_punc(ch):
             return Token(type="punc", value=self.consume_punc()) 
-        elif is_operator(ch):
-            return 
+        elif self.is_operator(ch):
+            return Token(type="op", value=self.consume_operator()) 
+        else:
+            self.stream.throw("invalid token")
 
     def tokenize(self):
         while not self.stream.eof():
             ch = self.stream.peek()
-            if is_whitespace(ch):
+            if self.is_whitespace(ch):
                 self.stream.next()
-                continue
-            
+                continue 
             token = self.next_token()
+            print(token)
 
+
+for line in sys.stdin: 
+    stream = InputStream(line)
+    tokenizer = Tokenizer(stream)
+    tokenizer.tokenize()
