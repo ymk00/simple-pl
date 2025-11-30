@@ -71,10 +71,14 @@ class Tokenizer:
 
     def consume_string(self) -> str:
         string = ""
+        # consume start quote
+        self.stream.next()
         while not self.is_quote(self.stream.peek()):
             string += self.stream.next()
             if self.stream.eof():
                 self.stream.throw("string is not closed")
+        # consume end quote
+        self.stream.next()
         return string
 
     def consume_number(self) -> int:
