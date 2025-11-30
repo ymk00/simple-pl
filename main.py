@@ -37,6 +37,7 @@ class Token:
 class Tokenizer:
     def __init__(self, stream: InputStream):
         self.stream = stream
+        self.token = None
 
     def is_whitespace(self, ch: str) -> bool:
         return ch == "\n" or ch == "\t" or ch == " "
@@ -127,17 +128,40 @@ class Tokenizer:
         else:
             self.stream.throw("invalid token")
 
-    def tokenize(self):
-        while not self.stream.eof():
-            ch = self.stream.peek()
-            if self.is_whitespace(ch):
-                self.stream.next()
-                continue 
-            token = self.next_token()
-            print(token)
+    def skip_whitespace(self):
+        while not self.stream.eof() and self.is_whitespace(self.stream.peek()):
+            self.stream.next()
 
+    def peek(self):
+        skip_whitespace()
+        if self.stream.eof():
+            self.token = None
+        else:
+            self.token = self.next_token()
+        return self.token
+
+    # peek consumes tokens, so cache the result
+    def next(self):
+        if self.token is None:
+            self.peek()
+
+        token = self.token 
+        self.token = None
+        return token
+
+    def eof(self):
+        return self.token is None
+
+class Parser:
+    def __init__():
+        ...
+
+    def parse():
+        ...
 
 for line in sys.stdin: 
     stream = InputStream(line)
     tokenizer = Tokenizer(stream)
-    tokenizer.tokenize()
+    while not tokenizer.eof():
+        token = tokenizer.next()
+        print(token)
