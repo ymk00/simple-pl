@@ -133,16 +133,18 @@ class Tokenizer:
             self.stream.next()
 
     def peek(self):
-        skip_whitespace()
-        if self.stream.eof():
+        self.skip_whitespace()
+        if self.eof():
             self.token = None
         else:
             self.token = self.next_token()
+        # tie up loose ends, so our eof works correcty
+        self.skip_whitespace()
         return self.token
 
     # peek consumes tokens, so cache the result
     def next(self):
-        if self.token is None:
+        if not self.eof() and self.token is None:
             self.peek()
 
         token = self.token 
@@ -150,7 +152,7 @@ class Tokenizer:
         return token
 
     def eof(self):
-        return self.token is None
+        return self.stream.eof()
 
 class Parser:
     def __init__():
